@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DFB — Monthly Intelligence Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --pink: #D6447A; --black: #111111; --white: #ffffff;
+    --off: #F7F6F4; --grey: #999999; --light: #E8E8E8;
+    --positive: #3A7A54;
+    --serif: 'DM Serif Display', Georgia, serif;
+    --sans: 'Century Gothic', 'Gill Sans', 'Trebuchet MS', sans-serif;
+  }
+  html { font-size: 16px; }
+  body { font-family: var(--sans); background: var(--white); color: var(--black); line-height: 1.7; -webkit-font-smoothing: antialiased; }
+  .container { max-width: 900px; margin: 0 auto; padding: 0 40px; }
+
+  /* HEADER */
+  .header { border-bottom: 1px solid var(--light); padding: 32px 0 24px; position: relative; }
+  .header::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--pink); }
+  .header-inner { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; }
+  .brand-name { font-family:var(--serif); font-style:italic; font-size:1.15rem; letter-spacing:-0.02em; }
+  .brand-tag { font-family:var(--sans); font-size:0.58rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--grey); margin-top:3px; }
+
+  /* TAB NAV */
+  .tab-nav { display:flex; gap:0; border-bottom:1px solid var(--light); margin:0 0 0; }
+  .tab-btn { background:none; border:none; font-family:var(--sans); font-size:0.62rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--grey); padding:18px 24px 14px; cursor:pointer; border-bottom:3px solid transparent; transition:all 0.15s; margin-bottom:-1px; }
+  .tab-btn:hover { color:var(--black); }
+  .tab-btn.active { color:var(--pink); border-bottom-color:var(--pink); }
+
+  /* VIEWS */
+  .view { display:none; }
+  .view.active { display:block; }
+
+  /* SECTION */
+  .section { padding:40px 0; border-bottom:1px solid var(--light); }
+  .section:last-of-type { border-bottom:none; }
+  .section-eyebrow { font-family:var(--sans); font-size:0.58rem; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--pink); margin-bottom:12px; }
+  .section-title { font-family:var(--serif); font-size:clamp(1.3rem,2.5vw,1.9rem); line-height:1.15; letter-spacing:-0.03em; margin-bottom:24px; }
+  .section-title em { font-style:italic; }
+
+  /* METRICS STRIP */
+  .metrics-strip { display:grid; grid-template-columns:repeat(4,1fr); border:1px solid var(--light); margin:28px 0; }
+  .m-cell { padding:24px 20px; border-right:1px solid var(--light); }
+  .m-cell:last-child { border-right:none; }
+  .m-label { font-family:var(--sans); font-size:0.58rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--grey); margin-bottom:8px; }
+  .m-value { font-family:var(--serif); font-size:2rem; line-height:1; letter-spacing:-0.03em; }
+  .m-value.pink { color:var(--pink); }
+  .m-delta { font-family:var(--sans); font-size:0.62rem; color:var(--grey); margin-top:6px; }
+  .m-delta.up { color:var(--positive); }
+  .m-delta.pink { color:var(--pink); }
+
+  /* STAT BLOCK */
+  .stat-block { background:var(--black); padding:40px; margin:0 0 0; position:relative; overflow:hidden; }
+  .stat-block::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--pink); }
+  .ghost { position:absolute; right:-8px; top:50%; transform:translateY(-50%); font-family:var(--serif); font-style:italic; font-size:6rem; color:var(--pink); opacity:0.05; line-height:1; pointer-events:none; }
+  .stat-eyebrow { font-family:var(--sans); font-size:0.58rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--white); opacity:0.4; margin-bottom:10px; }
+  .stat-big { font-family:var(--serif); font-size:clamp(2.5rem,5vw,3.5rem); color:var(--pink); line-height:1; letter-spacing:-0.04em; margin-bottom:10px; }
+  .stat-caption { font-family:var(--sans); font-size:0.75rem; color:var(--white); opacity:0.55; line-height:1.6; }
+
+  /* TWO COL */
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:28px; }
+
+  /* CHART BLOCK */
+  .chart-block { background:var(--off); padding:28px; }
+  .chart-title { font-family:var(--serif); font-size:1rem; letter-spacing:-0.02em; margin-bottom:3px; }
+  .chart-subtitle { font-family:var(--sans); font-size:0.6rem; color:var(--grey); letter-spacing:0.05em; margin-bottom:20px; }
+  .b-row { margin-bottom:14px; }
+  .b-meta { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; }
+  .b-lbl { font-family:var(--serif); font-size:0.85rem; }
+  .b-val { font-family:var(--sans); font-size:0.6rem; color:var(--grey); }
+  .b-track { height:7px; background:var(--light); }
+  .b-fill { height:100%; background:var(--black); transition:width 0.6s ease; }
+  .b-fill.pink { background:var(--pink); }
+  .chart-note { margin-top:16px; padding-top:12px; border-top:1px solid var(--light); font-family:var(--sans); font-size:0.6rem; color:var(--grey); line-height:1.6; }
+
+  /* PULL QUOTE */
+  .pull-quote { border-left:3px solid var(--pink); padding:4px 0 4px 20px; margin:20px 0; }
+  .pull-quote p { font-family:var(--serif); font-style:italic; font-size:1rem; line-height:1.45; letter-spacing:-0.02em; }
+
+  /* POST TABLE */
+  .data-table { width:100%; border-collapse:collapse; }
+  .data-table th { font-family:var(--sans); font-size:0.58rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--grey); text-align:left; padding:0 0 10px; border-bottom:1px solid var(--light); }
+  .data-table th:not(:first-child) { text-align:right; }
+  .data-table td { padding:10px 0; border-bottom:1px solid var(--light); font-family:var(--sans); font-size:0.72rem; vertical-align:top; }
+  .data-table td:not(:first-child) { text-align:right; white-space:nowrap; }
+  .cell-serif { font-family:var(--serif); font-size:0.85rem; line-height:1.35; padding-right:16px; }
+  .pill { display:inline-block; font-family:var(--sans); font-size:0.55rem; letter-spacing:0.05em; padding:2px 6px; }
+  .pill-high { background:#D9EFE2; color:var(--positive); }
+  .pill-mid { background:#FFF0C0; color:#8A6000; }
+  .pill-low { background:#FCE4EE; color:var(--pink); }
+
+  /* GEO */
+  .geo-bar { display:inline-block; height:3px; background:var(--pink); vertical-align:middle; margin-right:6px; }
+  .geo-pct { font-family:var(--sans); font-size:0.6rem; color:var(--grey); }
+
+  /* ACTIVITY DONUT */
+  .act-grid { display:grid; grid-template-columns:100px 1fr; gap:20px; align-items:center; }
+  .leg-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; font-family:var(--sans); font-size:0.7rem; }
+  .leg-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .leg-pct { margin-left:auto; font-family:var(--serif); font-size:0.85rem; color:var(--grey); }
+  .act-note { margin-top:14px; border-left:3px solid var(--pink); padding-left:10px; font-family:var(--sans); font-size:0.65rem; color:var(--grey); line-height:1.5; }
+
+  /* ── MONTHLY TIMELINE ── */
+  .month-tabs { display:flex; gap:0; overflow-x:auto; border-bottom:1px solid var(--light); margin-bottom:32px; scrollbar-width:none; }
+  .month-tabs::-webkit-scrollbar { display:none; }
+  .mtab { background:none; border:none; font-family:var(--sans); font-size:0.6rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--grey); padding:14px 20px 10px; cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap; transition:all 0.15s; margin-bottom:-1px; flex-shrink:0; }
+  .mtab:hover { color:var(--black); }
+  .mtab.active { color:var(--pink); border-bottom-color:var(--pink); }
+
+  .month-panel { display:none; }
+  .month-panel.active { display:block; }
+
+  /* MONTH METRICS */
+  .month-metrics { display:grid; grid-template-columns:repeat(5,1fr); border:1px solid var(--light); margin-bottom:28px; }
+  .mm-cell { padding:20px 16px; border-right:1px solid var(--light); }
+  .mm-cell:last-child { border-right:none; }
+  .mm-label { font-family:var(--sans); font-size:0.55rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--grey); margin-bottom:7px; }
+  .mm-value { font-family:var(--serif); font-size:1.6rem; line-height:1; letter-spacing:-0.03em; }
+  .mm-value.pink { color:var(--pink); }
+  .mm-delta { font-family:var(--sans); font-size:0.6rem; color:var(--grey); margin-top:5px; }
+  .mm-delta.up { color:var(--positive); }
+
+  /* EDITABLE FIELDS */
+  input.e-val { border:none; background:transparent; font-family:var(--serif); font-size:1.6rem; line-height:1; letter-spacing:-0.03em; color:var(--black); width:100%; outline:none; cursor:text; }
+  input.e-val.pink { color:var(--pink); }
+  input.e-val:focus { background:#FFF0F5; padding:0 4px; border-radius:2px; }
+  input.e-delta { border:none; background:transparent; font-family:var(--sans); font-size:0.6rem; color:var(--grey); outline:none; width:100%; cursor:text; margin-top:5px; display:block; }
+  input.e-delta:focus { background:#FFF0F5; padding:0 4px; }
+  input.e-delta.up { color:var(--positive); }
+  textarea.e-notes { width:100%; background:transparent; border:none; border-bottom:1px solid var(--light); font-family:var(--sans); font-size:0.78rem; color:var(--black); line-height:1.75; resize:none; outline:none; min-height:90px; padding-bottom:10px; }
+  textarea.e-notes::placeholder { color:var(--grey); font-style:italic; }
+
+  /* MONTH GROWTH SPARK */
+  .cumul-spark { display:flex; align-items:flex-end; gap:5px; height:70px; margin:0 0 6px; }
+  .cs-bar { flex:1; background:var(--light); position:relative; transition:background 0.15s; }
+  .cs-bar.filled { background:var(--black); }
+  .cs-bar.current { background:var(--pink); }
+  .cs-lbls { display:flex; gap:5px; }
+  .cs-lbl { flex:1; font-family:var(--sans); font-size:0.5rem; color:var(--grey); text-align:center; text-transform:uppercase; }
+
+  /* NOTES BOX */
+  .notes-box { background:var(--off); padding:28px; }
+  .notes-lbl { font-family:var(--sans); font-size:0.58rem; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--pink); margin-bottom:14px; }
+
+  /* FOOTER */
+  .footer { padding:32px 0 56px; border-top:1px solid var(--light); display:flex; justify-content:space-between; align-items:flex-end; }
+  .footer-brand { font-family:var(--serif); font-style:italic; font-size:0.95rem; }
+  .footer-tag { font-family:var(--sans); font-size:0.58rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--grey); margin-top:4px; }
+  .save-btn { background:var(--black); color:var(--white); border:none; font-family:var(--sans); font-size:0.6rem; letter-spacing:0.18em; text-transform:uppercase; padding:10px 22px; cursor:pointer; transition:background 0.15s; }
+  .save-btn:hover { background:var(--pink); }
+  .save-ok { font-family:var(--sans); font-size:0.6rem; color:var(--positive); letter-spacing:0.1em; opacity:0; transition:opacity 0.4s; display:block; margin-top:6px; text-align:right; }
+  .label-pill { display:inline-block; font-family:var(--sans); font-size:0.58rem; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--white); background:var(--pink); padding:4px 10px; margin-bottom:20px; }
+
+  @media(max-width:680px){
+    .container{padding:0 20px;}
+    .metrics-strip,.month-metrics{grid-template-columns:1fr 1fr;}
+    .m-cell:nth-child(2),.mm-cell:nth-child(2){border-right:none;}
+    .m-cell:nth-child(3),.mm-cell:nth-child(3){border-top:1px solid var(--light);}
+    .two-col{grid-template-columns:1fr;}
+    .act-grid{grid-template-columns:1fr;}
+    .footer{flex-direction:column;align-items:flex-start;gap:16px;}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header class="header">
+    <div class="header-inner">
+      <div>
+        <div class="brand-name">The Data Fashion Brief</div>
+        <div class="brand-tag">Monthly Intelligence Dashboard · Where Data Meets Fashion</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:var(--serif);font-style:italic;font-size:0.95rem;color:var(--pink);">Dec 2025 — May 2026</div>
+        <div style="font-family:var(--sans);font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--grey);margin-top:3px;">6 months tracked</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN TAB NAV -->
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchView('overview')">Aggregated Overview</button>
+    <button class="tab-btn" onclick="switchView('monthly')">Monthly Breakdown</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       VIEW 1: AGGREGATED OVERVIEW
+  ══════════════════════════════════════════ -->
+  <div class="view active" id="view-overview">
+
+    <div class="section">
+      <div class="section-eyebrow">All-time · Dec 2025 — 15 May 2026</div>
+      <h2 class="section-title">The numbers.<br><em>Since launch.</em></h2>
+
+      <div class="metrics-strip">
+        <div class="m-cell">
+          <div class="m-label">Total Subscribers</div>
+          <div class="m-value">4,946</div>
+          <div class="m-delta up">↑ from 6 in Dec 2025</div>
+        </div>
+        <div class="m-cell">
+          <div class="m-label">Paid Subscribers</div>
+          <div class="m-value pink">1</div>
+          <div class="m-delta pink">£145.91 total revenue</div>
+        </div>
+        <div class="m-cell">
+          <div class="m-label">Avg Open Rate</div>
+          <div class="m-value">36%</div>
+          <div class="m-delta up">↑ vs 21% industry avg</div>
+        </div>
+        <div class="m-cell">
+          <div class="m-label">Posts Published</div>
+          <div class="m-value">9</div>
+          <div class="m-delta">across 5 months</div>
+        </div>
+      </div>
+
+      <!-- CUMULATIVE GROWTH CHART -->
+      <div class="chart-block" style="margin-bottom:28px;">
+        <div class="chart-title">Cumulative Subscriber Growth</div>
+        <div class="chart-subtitle">Total subscribers at end of each month · Source: Substack export</div>
+        <div id="cumulBars"></div>
+        <div class="chart-note">March 2026 was the inflection point — +2,257 new subscribers in a single month, driven by Substack Notes going viral.</div>
+      </div>
+
+      <!-- NEW SUBS BY MONTH -->
+      <div class="chart-block">
+        <div class="chart-title">New Subscribers per Month</div>
+        <div class="chart-subtitle">Net new subscribers each month</div>
+        <div id="newSubsBars"></div>
+      </div>
+    </div>
+
+    <!-- TRAFFIC -->
+    <div class="section">
+      <div class="section-eyebrow">Traffic & Acquisition</div>
+      <h2 class="section-title">Where your<br><em>readers come from.</em></h2>
+      <div style="background:#FFF0F5;border-left:3px solid var(--pink);padding:10px 16px;margin-bottom:24px;font-family:var(--sans);font-size:0.62rem;color:var(--grey);line-height:1.6;">
+        <strong style="color:var(--pink);letter-spacing:0.1em;text-transform:uppercase;font-size:0.55rem;">Note on data</strong><br>
+        Substack only exports traffic sources as an all-time aggregate — it cannot be broken down by month. These figures cover Dec 2025 — 15 May 2026 and will update each time you re-export from Substack.
+      </div>
+      <div class="two-col">
+        <div class="chart-block">
+          <div class="chart-title">Traffic by Views</div>
+          <div class="chart-subtitle">All time · Dec 2025 — 15 May 2026 · Substack export</div>
+          <div id="trafficBars"></div>
+          <div class="chart-note">Email opens + Direct to App dominate. Your core reader is app-native.</div>
+        </div>
+        <div class="chart-block">
+          <div class="chart-title">New Subscribers by Source</div>
+          <div class="chart-subtitle">All time · Dec 2025 — 15 May 2026 · Substack export</div>
+          <div id="acqBars"></div>
+          <div class="chart-note">Notes drove 3,423 subscribers — 69% of your entire list.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="section">
+      <div class="section-eyebrow">Content Performance</div>
+      <h2 class="section-title">What the<br><em>data confirms.</em></h2>
+      <div class="pull-quote">
+        <p>"Stop Calling Everything A Trend drove 37 signups — the most of any post. Your contrarian positioning is your #1 growth mechanism."</p>
+      </div>
+
+      <!-- EMAIL BY MONTH -->
+      <div class="chart-block" style="margin-bottom:28px;">
+        <div class="chart-title">Avg Open Rate by Month</div>
+        <div class="chart-subtitle">All published issues</div>
+        <div id="openRateBars"></div>
+        <div class="chart-note">Early issues had 100%+ open rates from a tiny engaged list. Settling around 27–30% at scale — still well above industry average.</div>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Post</th><th>Month</th><th>Views</th><th>Open</th><th>Engagement</th><th>Signups</th>
+          </tr>
+        </thead>
+        <tbody id="postBody"></tbody>
+      </table>
+    </div>
+
+    <!-- AUDIENCE -->
+    <div class="section">
+      <div class="section-eyebrow">Audience</div>
+      <h2 class="section-title">Who is<br><em>reading.</em></h2>
+      <div class="two-col">
+        <div>
+          <p style="font-family:var(--sans);font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--grey);margin-bottom:14px;">Top Markets</p>
+          <table class="data-table" id="geoTable">
+            <thead><tr><th>Market</th><th>Subscribers</th><th>Share</th></tr></thead>
+            <tbody id="geoBody"></tbody>
+          </table>
+        </div>
+        <div>
+          <p style="font-family:var(--sans);font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--grey);margin-bottom:14px;">Engagement Breakdown</p>
+          <div class="act-grid">
+            <svg viewBox="0 0 120 120" style="width:100px;height:100px;">
+              <circle cx="60" cy="60" r="46" fill="none" stroke="#E8E8E8" stroke-width="14"/>
+              <circle cx="60" cy="60" r="46" fill="none" stroke="#D6447A" stroke-width="14"
+                stroke-dasharray="72 217" stroke-dashoffset="72" transform="rotate(-90 60 60)"/>
+              <circle cx="60" cy="60" r="46" fill="none" stroke="#111111" stroke-width="14"
+                stroke-dasharray="78 211" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+            </svg>
+            <div>
+              <div class="leg-row"><div class="leg-dot" style="background:#D6447A"></div>Warm — engaged<span class="leg-pct">25%</span></div>
+              <div class="leg-row"><div class="leg-dot" style="background:#111111"></div>Mid — some activity<span class="leg-pct">27%</span></div>
+              <div class="leg-row"><div class="leg-dot" style="background:#E8E8E8;border:1px solid #ccc"></div>Cold — no activity<span class="leg-pct">48%</span></div>
+              <div class="act-note">1,233 warm readers is your real audience and monetisation pool.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /view-overview -->
+
+  <!-- ══════════════════════════════════════════
+       VIEW 2: MONTHLY BREAKDOWN
+  ══════════════════════════════════════════ -->
+  <div class="view" id="view-monthly">
+
+    <div style="padding:32px 0 0;">
+      <div class="month-tabs" id="monthTabs"></div>
+      <div id="monthPanels"></div>
+    </div>
+
+  </div><!-- /view-monthly -->
+
+  <footer class="footer">
+    <div>
+      <div class="footer-brand">The Data Fashion Brief</div>
+      <div class="footer-tag">Intelligence Dashboard · @thedatafashionbrief</div>
+    </div>
+    <div style="text-align:right;">
+      <button class="save-btn" onclick="saveAll()">Save Progress</button>
+      <span class="save-ok" id="saveOk">✓ Saved to browser</span>
+    </div>
+  </footer>
+
+</div><!-- /container -->
+
+<script>
+// ── STATIC DATA (from your Substack exports) ─────────────────────
+
+const MONTHS = [
+  { key:'2025-12', short:'Dec 25', full:'December 2025' },
+  { key:'2026-01', short:'Jan 26', full:'January 2026' },
+  { key:'2026-02', short:'Feb 26', full:'February 2026' },
+  { key:'2026-03', short:'Mar 26', full:'March 2026' },
+  { key:'2026-04', short:'Apr 26', full:'April 2026' },
+  { key:'2026-05', short:'May 26', full:'May 2026 (to 15th)' },
+];
+
+// From subscriber export + growth sources CSV
+const STATIC = {
+  '2025-12': { newSubs:6,  cumul:6,    revenue:0,      posts:1, avgOpen:100, avgEng:100, totalViews:321,  signups:2  },
+  '2026-01': { newSubs:17, cumul:23,   revenue:0,      posts:2, avgOpen:51,  avgEng:38,  totalViews:294,  signups:16 },
+  '2026-02': { newSubs:480,cumul:503,  revenue:0,      posts:1, avgOpen:38,  avgEng:20,  totalViews:693,  signups:12 },
+  '2026-03': { newSubs:2257,cumul:2760,revenue:0,      posts:3, avgOpen:28,  avgEng:13,  totalViews:3810, signups:61 },
+  '2026-04': { newSubs:1334,cumul:4094,revenue:0,      posts:2, avgOpen:28,  avgEng:10,  totalViews:4487, signups:20 },
+  '2026-05': { newSubs:852, cumul:4946,revenue:145.91, posts:0, avgOpen:0,   avgEng:0,   totalViews:0,    signups:0  },
+};
+
+// Editable monthly fields — user fills these in each month
+const DEFAULT_MONTHLY = {
+  '2025-12': { totalSubs:'6',   paid:'0', openRate:'100%', notes:'First subscribers — mostly friends and early followers. Published first post: The Role of Analytics in Fashion.' },
+  '2026-01': { totalSubs:'23',  paid:'0', openRate:'51%',  notes:'Early growth still slow. Published 2 posts including Valentino timelessness piece. Open rates very high because list is tiny and engaged.' },
+  '2026-02': { totalSubs:'503', paid:'0', openRate:'38%',  notes:'First real growth spike — +480 subscribers. Romance Is Trending published. Substack Notes starting to drive discovery.' },
+  '2026-03': { totalSubs:'2,760',paid:'0',openRate:'28%', notes:'Inflection point. +2,257 new subscribers in one month. Paris Fashion Week coverage and Stop Calling Everything A Trend drove 37 signups from a single post. Notes went viral.' },
+  '2026-04': { totalSubs:'4,094',paid:'0',openRate:'28%', notes:'Strong sustained growth — +1,334 new subs. Coachella data piece and Bhavitha Mandava/Chanel analysis published. Open rates stabilising at scale.' },
+  '2026-05': { totalSubs:'4,946',paid:'1',openRate:'26%', notes:'First paid subscriber. Growth continues — 852 new subs in first 15 days. £145.91 revenue. Add your notes here each month.' },
+};
+
+const trafficD = [
+  {label:'Email opens',val:5273,pct:100,pink:true},
+  {label:'Direct to App',val:5070,pct:96,pink:false},
+  {label:'Direct',val:5062,pct:96,pink:false},
+  {label:'Substack app',val:3054,pct:58,pink:false},
+  {label:'Instagram',val:158,pct:3,pink:true},
+  {label:'Google',val:73,pct:1.4,pink:false},
+];
+const acqD = [
+  {label:'Substack Notes',val:3423,pct:100,pink:true},
+  {label:'Onboarding',val:688,pct:20,pink:false},
+  {label:'Direct to App',val:647,pct:19,pink:false},
+  {label:'Substack other',val:539,pct:16,pink:false},
+  {label:'Instagram',val:13,pct:0.4,pink:true},
+  {label:'TikTok',val:0,pct:0,pink:false},
+];
+const posts = [
+  {title:"Stop Calling Everything A Trend — AW26",month:"Mar 26",views:2217,open:30,eng:16,signups:37},
+  {title:"Coachella 2026 Celebrity Data",month:"Apr 26",views:2512,open:29,eng:14,signups:13},
+  {title:"Bhavitha Mandava / Chanel Playbook",month:"Apr 26",views:1975,open:26,eng:6,signups:7},
+  {title:"Romance Is Trending",month:"Feb 26",views:693,open:38,eng:20,signups:12},
+  {title:"The Queue at Chanel Stores",month:"Mar 26",views:884,open:27,eng:13,signups:13},
+  {title:"Paris Fashion Week Doesn't Compete",month:"Mar 26",views:709,open:29,eng:12,signups:11},
+  {title:"Schiaparelli Haute Couture SS26",month:"Jan 26",views:196,open:44,eng:50,signups:13},
+  {title:"Valentino & the Data of Timelessness",month:"Jan 26",views:98,open:57,eng:25,signups:3},
+  {title:"The Role of Analytics in Fashion",month:"Dec 25",views:321,open:100,eng:100,signups:2},
+];
+const geo = [
+  {flag:'🇺🇸',name:'United States',subs:1311,pct:26.5},
+  {flag:'🇬🇧',name:'United Kingdom',subs:540,pct:10.9},
+  {flag:'🇮🇳',name:'India',subs:453,pct:9.2},
+  {flag:'🇫🇷',name:'France',subs:242,pct:4.9},
+  {flag:'🇦🇺',name:'Australia',subs:226,pct:4.6},
+  {flag:'🇧🇷',name:'Brazil',subs:209,pct:4.2},
+  {flag:'🇨🇦',name:'Canada',subs:187,pct:3.8},
+  {flag:'🇪🇸',name:'Spain',subs:142,pct:2.9},
+  {flag:'🇩🇪',name:'Germany',subs:134,pct:2.7},
+  {flag:'🇮🇹',name:'Italy',subs:132,pct:2.7},
+];
+
+// ── STORAGE ──────────────────────────────────────────────────────
+let saved = {};
+try { saved = JSON.parse(localStorage.getItem('dfb-v3') || '{}'); } catch(e){}
+
+function getSaved(key, field, fallback) {
+  return (saved[key] && saved[key][field] !== undefined) ? saved[key][field] : (DEFAULT_MONTHLY[key] ? DEFAULT_MONTHLY[key][field] : fallback || '');
+}
+
+function saveAll() {
+  // Collect all editable inputs
+  document.querySelectorAll('[data-save]').forEach(el => {
+    const [key, field] = el.dataset.save.split('|');
+    if (!saved[key]) saved[key] = {};
+    saved[key][field] = el.value || el.innerText;
+  });
+  localStorage.setItem('dfb-v3', JSON.stringify(saved));
+  const ok = document.getElementById('saveOk');
+  ok.style.opacity = 1;
+  setTimeout(() => ok.style.opacity = 0, 2500);
+}
+
+// ── VIEW SWITCHING ────────────────────────────────────────────────
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── RENDER BARS ───────────────────────────────────────────────────
+function renderBars(id, data) {
+  document.getElementById(id).innerHTML = data.map(d => `
+    <div class="b-row">
+      <div class="b-meta"><span class="b-lbl">${d.label}</span><span class="b-val">${typeof d.val === 'number' ? d.val.toLocaleString() : d.val}</span></div>
+      <div class="b-track"><div class="b-fill${d.pink?' pink':''}" style="width:${Math.max(d.pct,0.3)}%"></div></div>
+    </div>`).join('');
+}
+
+// ── OVERVIEW RENDERS ──────────────────────────────────────────────
+function renderCumulBars() {
+  const maxV = 4946;
+  const data = MONTHS.map(m => ({ label: m.short, val: STATIC[m.key].cumul, pct: (STATIC[m.key].cumul / maxV) * 100, pink: m.key === '2026-05' }));
+  renderBars('cumulBars', data);
+}
+
+function renderNewSubsBars() {
+  const maxV = Math.max(...MONTHS.map(m => STATIC[m.key].newSubs));
+  const data = MONTHS.map(m => ({ label: m.short, val: STATIC[m.key].newSubs, pct: (STATIC[m.key].newSubs / maxV) * 100, pink: m.key === '2026-03' }));
+  renderBars('newSubsBars', data);
+}
+
+function renderOpenRateBars() {
+  const data = MONTHS.filter(m => STATIC[m.key].avgOpen > 0).map(m => ({
+    label: m.short, val: STATIC[m.key].avgOpen + '%', pct: Math.min(STATIC[m.key].avgOpen, 100), pink: STATIC[m.key].avgOpen >= 35
+  }));
+  renderBars('openRateBars', data);
+}
+
+function renderPosts() {
+  document.getElementById('postBody').innerHTML = posts.map(p => {
+    const oc = p.open>=40?'high':p.open>=27?'mid':'low';
+    const ec = p.eng>=20?'high':p.eng>=12?'mid':'low';
+    return `<tr>
+      <td><div class="cell-serif">${p.title}</div></td>
+      <td style="font-family:var(--sans);font-size:0.65rem;color:var(--grey);white-space:nowrap">${p.month}</td>
+      <td>${p.views.toLocaleString()}</td>
+      <td><span class="pill pill-${oc}">${p.open}%</span></td>
+      <td><span class="pill pill-${ec}">${p.eng}%</span></td>
+      <td>${p.signups}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderGeo() {
+  document.getElementById('geoBody').innerHTML = geo.map(g => `
+    <tr>
+      <td>${g.flag} ${g.name}</td>
+      <td>${g.subs.toLocaleString()}</td>
+      <td><span class="geo-bar" style="width:${g.pct*3.2}px"></span><span class="geo-pct">${g.pct}%</span></td>
+    </tr>`).join('');
+}
+
+// ── DATA PER MONTH ───────────────────────────────────────────────
+// Posts indexed by month key
+const postsByMonth = {
+  '2025-12': [
+    {title:"The Role of Analytics in Fashion",views:321,open:100,eng:100,signups:2},
+  ],
+  '2026-01': [
+    {title:"Schiaparelli Haute Couture SS26",views:196,open:44,eng:50,signups:13},
+    {title:"Valentino & the Data of Timelessness",views:98,open:57,eng:25,signups:3},
+  ],
+  '2026-02': [
+    {title:"Romance Is Trending",views:693,open:38,eng:20,signups:12},
+  ],
+  '2026-03': [
+    {title:"Stop Calling Everything A Trend — AW26",views:2217,open:30,eng:16,signups:37},
+    {title:"The Queue at Chanel Stores",views:884,open:27,eng:13,signups:13},
+    {title:"Paris Fashion Week Doesn't Compete",views:709,open:29,eng:12,signups:11},
+  ],
+  '2026-04': [
+    {title:"Coachella 2026 Celebrity Data",views:2512,open:29,eng:14,signups:13},
+    {title:"Bhavitha Mandava / Chanel Playbook",views:1975,open:26,eng:6,signups:7},
+  ],
+  '2026-05': [],
+};
+
+function postTableHTML(monthKey) {
+  const ps = postsByMonth[monthKey] || [];
+  if (!ps.length) return `<div style="font-family:var(--sans);font-size:0.75rem;color:var(--grey);font-style:italic;padding:16px 0;">No posts published this month yet.</div>`;
+  const rows = ps.map(p => {
+    const oc = p.open>=40?'high':p.open>=27?'mid':'low';
+    const ec = p.eng>=20?'high':p.eng>=12?'mid':'low';
+    return `<tr>
+      <td><div class="cell-serif">${p.title}</div></td>
+      <td>${p.views.toLocaleString()}</td>
+      <td><span class="pill pill-${oc}">${p.open}%</span></td>
+      <td><span class="pill pill-${ec}">${p.eng}%</span></td>
+      <td>${p.signups}</td>
+    </tr>`;
+  }).join('');
+  return `<table class="data-table">
+    <thead><tr><th>Post</th><th>Views</th><th>Open</th><th>Engagement</th><th>Signups</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+// ── MONTHLY PANELS ────────────────────────────────────────────────
+function buildMonthlyView() {
+  const tabsEl = document.getElementById('monthTabs');
+  const panelsEl = document.getElementById('monthPanels');
+
+  MONTHS.forEach((m, idx) => {
+    const s = STATIC[m.key];
+    const isActive = idx === MONTHS.length - 1;
+    const prev = idx > 0 ? STATIC[MONTHS[idx-1].key].cumul : 0;
+    const delta = s.cumul - prev;
+    const deltaStr = delta > 0 ? `↑ +${delta.toLocaleString()} new this month` : 'First month';
+
+    // TAB
+    const tab = document.createElement('button');
+    tab.className = 'mtab' + (isActive ? ' active' : '');
+    tab.textContent = m.short;
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mtab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.month-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + m.key).classList.add('active');
+    });
+    tabsEl.appendChild(tab);
+
+    // Sparkline
+    const sparkBars = MONTHS.slice(0, idx + 1).map((mm, si) => {
+      const h = Math.max(4, (STATIC[mm.key].cumul / 4946) * 70);
+      const cls = si === idx ? 'current' : 'filled';
+      return `<div class="cs-bar ${cls}" style="height:${h}px" title="${mm.short}: ${STATIC[mm.key].cumul.toLocaleString()} total"></div>`;
+    }).join('') + MONTHS.slice(idx + 1).map(() => `<div class="cs-bar" style="height:4px"></div>`).join('');
+    const sparkLbls = MONTHS.map(mm => `<div class="cs-lbl">${mm.short}</div>`).join('');
+
+    // PANEL
+    const panel = document.createElement('div');
+    panel.className = 'month-panel' + (isActive ? ' active' : '');
+    panel.id = 'panel-' + m.key;
+
+    panel.innerHTML = `
+      <div class="label-pill">${m.full}</div>
+
+      <!-- 01 SUBSCRIBERS -->
+      <div style="padding:32px 0;border-bottom:1px solid var(--light);">
+        <div class="section-eyebrow">01 — Subscribers</div>
+        <div class="month-metrics">
+          <div class="mm-cell">
+            <div class="mm-label">Total Subscribers</div>
+            <input class="e-val" data-save="${m.key}|totalSubs" value="${getSaved(m.key,'totalSubs',s.cumul.toString())}">
+            <input class="e-delta up" data-save="${m.key}|totalSubsDelta" value="${getSaved(m.key,'totalSubsDelta',deltaStr)}">
+          </div>
+          <div class="mm-cell">
+            <div class="mm-label">New This Month</div>
+            <div class="mm-value">${s.newSubs.toLocaleString()}</div>
+            <div class="mm-delta">${((s.newSubs / Math.max(s.cumul,1))*100).toFixed(1)}% of total list</div>
+          </div>
+          <div class="mm-cell">
+            <div class="mm-label">Paid Subscribers</div>
+            <input class="e-val pink" data-save="${m.key}|paid" value="${getSaved(m.key,'paid','0')}">
+            <input class="e-delta" data-save="${m.key}|paidDelta" value="${getSaved(m.key,'paidDelta', m.key==='2026-05'?'£145.91 revenue':'—')}">
+          </div>
+          <div class="mm-cell">
+            <div class="mm-label">Avg Open Rate</div>
+            <input class="e-val" data-save="${m.key}|openRate" value="${getSaved(m.key,'openRate', s.avgOpen>0?s.avgOpen+'%':'—')}">
+            <input class="e-delta" data-save="${m.key}|openDelta" value="${getSaved(m.key,'openDelta', s.posts>0?s.posts+' post'+(s.posts>1?'s':'')+' published':'No posts')}">
+          </div>
+          <div class="mm-cell">
+            <div class="mm-label">Signups from Email</div>
+            <div class="mm-value">${s.signups}</div>
+            <div class="mm-delta">${s.totalViews.toLocaleString()} total views</div>
+          </div>
+        </div>
+        <div class="chart-block">
+          <div class="chart-title">Cumulative Growth to Date</div>
+          <div class="chart-subtitle">Total subscribers — each bar is one month</div>
+          <div class="cumul-spark">${sparkBars}</div>
+          <div class="cs-lbls">${sparkLbls}</div>
+        </div>
+      </div>
+
+      <!-- 02 TRAFFIC SOURCES -->
+      <div style="padding:32px 0;border-bottom:1px solid var(--light);">
+        <div class="section-eyebrow">02 — Where Readers Come From</div>
+        <div style="background:#FFF0F5;border-left:3px solid var(--pink);padding:10px 16px;margin-bottom:20px;font-family:var(--sans);font-size:0.62rem;color:var(--grey);line-height:1.6;">
+          <strong style="color:var(--pink);letter-spacing:0.1em;text-transform:uppercase;font-size:0.55rem;">All-time data</strong><br>
+          Substack exports traffic sources as an all-time aggregate only — cannot be broken down by month.
+        </div>
+        <div class="two-col">
+          <div class="chart-block">
+            <div class="chart-title">Traffic by Views</div>
+            <div class="chart-subtitle">All time · Dec 2025 — May 2026</div>
+            <div id="traffic-${m.key}"></div>
+          </div>
+          <div class="chart-block">
+            <div class="chart-title">New Subscribers by Source</div>
+            <div class="chart-subtitle">All time · Dec 2025 — May 2026</div>
+            <div id="acq-${m.key}"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 03 POSTS THIS MONTH -->
+      <div style="padding:32px 0;border-bottom:1px solid var(--light);">
+        <div class="section-eyebrow">03 — Posts Published This Month</div>
+        ${postTableHTML(m.key)}
+      </div>
+
+      <!-- 04 WHO IS READING -->
+      <div style="padding:32px 0;border-bottom:1px solid var(--light);">
+        <div class="section-eyebrow">04 — Who Is Reading</div>
+        <div style="background:#FFF0F5;border-left:3px solid var(--pink);padding:10px 16px;margin-bottom:20px;font-family:var(--sans);font-size:0.62rem;color:var(--grey);line-height:1.6;">
+          <strong style="color:var(--pink);letter-spacing:0.1em;text-transform:uppercase;font-size:0.55rem;">All-time data</strong><br>
+          Geography and engagement data is from the full subscriber export — not broken down by month in Substack.
+        </div>
+        <div class="two-col">
+          <div>
+            <p style="font-family:var(--sans);font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--grey);margin-bottom:14px;">Top Markets</p>
+            <table class="data-table">
+              <thead><tr><th>Market</th><th>Subscribers</th><th>Share</th></tr></thead>
+              <tbody>
+                ${geo.map(g => `<tr>
+                  <td>${g.flag} ${g.name}</td>
+                  <td>${g.subs.toLocaleString()}</td>
+                  <td><span class="geo-bar" style="width:${g.pct*3.2}px"></span><span class="geo-pct">${g.pct}%</span></td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <p style="font-family:var(--sans);font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--grey);margin-bottom:14px;">Engagement Breakdown</p>
+            <div class="act-grid">
+              <svg viewBox="0 0 120 120" style="width:100px;height:100px;">
+                <circle cx="60" cy="60" r="46" fill="none" stroke="#E8E8E8" stroke-width="14"/>
+                <circle cx="60" cy="60" r="46" fill="none" stroke="#D6447A" stroke-width="14"
+                  stroke-dasharray="72 217" stroke-dashoffset="72" transform="rotate(-90 60 60)"/>
+                <circle cx="60" cy="60" r="46" fill="none" stroke="#111111" stroke-width="14"
+                  stroke-dasharray="78 211" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+              </svg>
+              <div>
+                <div class="leg-row"><div class="leg-dot" style="background:#D6447A"></div>Warm — engaged<span class="leg-pct">25%</span></div>
+                <div class="leg-row"><div class="leg-dot" style="background:#111111"></div>Mid — some activity<span class="leg-pct">27%</span></div>
+                <div class="leg-row"><div class="leg-dot" style="background:#E8E8E8;border:1px solid #ccc"></div>Cold — no activity<span class="leg-pct">48%</span></div>
+                <div class="act-note">1,233 warm readers is your real audience and monetisation pool.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 05 NOTES -->
+      <div style="padding:32px 0;">
+        <div class="section-eyebrow">05 — Monthly Notes</div>
+        <div class="notes-box">
+          <div class="notes-lbl">What happened in ${m.full}</div>
+          <textarea class="e-notes" data-save="${m.key}|notes" placeholder="What drove growth? What content worked? Qualitative signals from comments and DMs. What to try next month...">${getSaved(m.key,'notes','')}</textarea>
+        </div>
+      </div>
+    `;
+    panelsEl.appendChild(panel);
+
+    // Render traffic bars inside each panel after appending
+    setTimeout(() => {
+      renderBars('traffic-'+m.key, trafficD);
+      renderBars('acq-'+m.key, acqD);
+    }, 0);
+  });
+
+  panelsEl.addEventListener('input', () => {
+    clearTimeout(window._as);
+    window._as = setTimeout(saveAll, 1200);
+  });
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+renderCumulBars();
+renderNewSubsBars();
+renderOpenRateBars();
+renderBars('trafficBars', trafficD);
+renderBars('acqBars', acqD);
+renderPosts();
+renderGeo();
+buildMonthlyView();
+
+</script>
+</body>
+</html>
