@@ -124,15 +124,12 @@
   .mm-delta { font-family:var(--sans); font-size:0.6rem; color:var(--grey); margin-top:5px; }
   .mm-delta.up { color:var(--positive); }
 
-  /* EDITABLE FIELDS */
-  input.e-val { border:none; background:transparent; font-family:var(--serif); font-size:1.6rem; line-height:1; letter-spacing:-0.03em; color:var(--black); width:100%; outline:none; cursor:text; }
-  input.e-val.pink { color:var(--pink); }
-  input.e-val:focus { background:#FFF0F5; padding:0 4px; border-radius:2px; }
-  input.e-delta { border:none; background:transparent; font-family:var(--sans); font-size:0.6rem; color:var(--grey); outline:none; width:100%; cursor:text; margin-top:5px; display:block; }
-  input.e-delta:focus { background:#FFF0F5; padding:0 4px; }
-  input.e-delta.up { color:var(--positive); }
-  textarea.e-notes { width:100%; background:transparent; border:none; border-bottom:1px solid var(--light); font-family:var(--sans); font-size:0.78rem; color:var(--black); line-height:1.75; resize:none; outline:none; min-height:90px; padding-bottom:10px; }
-  textarea.e-notes::placeholder { color:var(--grey); font-style:italic; }
+  /* STATIC DISPLAY FIELDS */
+  .e-val { font-family:var(--serif); font-size:1.6rem; line-height:1; letter-spacing:-0.03em; color:var(--black); display:block; }
+  .e-val.pink { color:var(--pink); }
+  .e-delta { font-family:var(--sans); font-size:0.6rem; color:var(--grey); margin-top:5px; display:block; }
+  .e-delta.up { color:var(--positive); }
+  .e-notes { font-family:var(--sans); font-size:0.78rem; color:var(--black); line-height:1.75; padding-bottom:10px; border-bottom:1px solid var(--light); }
 
   /* MONTH GROWTH SPARK */
   .cumul-spark { display:flex; align-items:flex-end; gap:5px; height:70px; margin:0 0 6px; }
@@ -150,9 +147,8 @@
   .footer { padding:32px 0 56px; border-top:1px solid var(--light); display:flex; justify-content:space-between; align-items:flex-end; }
   .footer-brand { font-family:var(--serif); font-style:italic; font-size:0.95rem; }
   .footer-tag { font-family:var(--sans); font-size:0.58rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--grey); margin-top:4px; }
-  .save-btn { background:var(--black); color:var(--white); border:none; font-family:var(--sans); font-size:0.6rem; letter-spacing:0.18em; text-transform:uppercase; padding:10px 22px; cursor:pointer; transition:background 0.15s; }
-  .save-btn:hover { background:var(--pink); }
-  .save-ok { font-family:var(--sans); font-size:0.6rem; color:var(--positive); letter-spacing:0.1em; opacity:0; transition:opacity 0.4s; display:block; margin-top:6px; text-align:right; }
+  .last-updated { font-family:var(--sans); font-size:0.6rem; color:var(--grey); letter-spacing:0.1em; text-align:right; }
+  .last-updated span { color:var(--pink); font-family:var(--serif); font-style:italic; font-size:0.75rem; display:block; margin-top:2px; }
   .label-pill { display:inline-block; font-family:var(--sans); font-size:0.58rem; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--white); background:var(--pink); padding:4px 10px; margin-bottom:20px; }
 
   @media(max-width:680px){
@@ -338,11 +334,12 @@
       <div class="footer-brand">The Data Fashion Brief</div>
       <div class="footer-tag">Intelligence Dashboard · @thedatafashionbrief</div>
     </div>
-    <div style="text-align:right;">
-      <button class="save-btn" onclick="saveAll()">Save Progress</button>
-      <span class="save-ok" id="saveOk">✓ Saved to browser</span>
+    <div class="last-updated">
+      Last updated
+      <span>15 May 2026</span>
     </div>
   </footer>
+
 
 </div><!-- /container -->
 
@@ -420,23 +417,9 @@ const geo = [
 
 // ── STORAGE ──────────────────────────────────────────────────────
 let saved = {};
-try { saved = JSON.parse(localStorage.getItem('dfb-v3') || '{}'); } catch(e){}
 
-function getSaved(key, field, fallback) {
+function '' {
   return (saved[key] && saved[key][field] !== undefined) ? saved[key][field] : (DEFAULT_MONTHLY[key] ? DEFAULT_MONTHLY[key][field] : fallback || '');
-}
-
-function saveAll() {
-  // Collect all editable inputs
-  document.querySelectorAll('[data-save]').forEach(el => {
-    const [key, field] = el.dataset.save.split('|');
-    if (!saved[key]) saved[key] = {};
-    saved[key][field] = el.value || el.innerText;
-  });
-  localStorage.setItem('dfb-v3', JSON.stringify(saved));
-  const ok = document.getElementById('saveOk');
-  ok.style.opacity = 1;
-  setTimeout(() => ok.style.opacity = 0, 2500);
 }
 
 // ── VIEW SWITCHING ────────────────────────────────────────────────
@@ -591,8 +574,8 @@ function buildMonthlyView() {
         <div class="month-metrics">
           <div class="mm-cell">
             <div class="mm-label">Total Subscribers</div>
-            <input class="e-val" data-save="${m.key}|totalSubs" value="${getSaved(m.key,'totalSubs',s.cumul.toString())}">
-            <input class="e-delta up" data-save="${m.key}|totalSubsDelta" value="${getSaved(m.key,'totalSubsDelta',deltaStr)}">
+            <div class="e-val">${s.cumul.toString()}</div>
+            <div class="e-delta up">deltaStr</div>
           </div>
           <div class="mm-cell">
             <div class="mm-label">New This Month</div>
@@ -601,13 +584,13 @@ function buildMonthlyView() {
           </div>
           <div class="mm-cell">
             <div class="mm-label">Paid Subscribers</div>
-            <input class="e-val pink" data-save="${m.key}|paid" value="${getSaved(m.key,'paid','0')}">
-            <input class="e-delta" data-save="${m.key}|paidDelta" value="${getSaved(m.key,'paidDelta', m.key==='2026-05'?'£145.91 revenue':'—')}">
+            <div class="e-val pink">'0'</div>
+            <div class="e-delta"> m.key==='2026-05'?'£145.91 revenue':'—'</div>
           </div>
           <div class="mm-cell">
             <div class="mm-label">Avg Open Rate</div>
-            <input class="e-val" data-save="${m.key}|openRate" value="${getSaved(m.key,'openRate', s.avgOpen>0?s.avgOpen+'%':'—')}">
-            <input class="e-delta" data-save="${m.key}|openDelta" value="${getSaved(m.key,'openDelta', s.posts>0?s.posts+' post'+(s.posts>1?'s':'')+' published':'No posts')}">
+            <div class="e-val"> s.avgOpen>0?s.avgOpen+'%':'—'</div>
+            <div class="e-delta">${s.posts>0?s.posts+' post'+(s.posts>1?'s':''+' published':'No posts')}</div>
           </div>
           <div class="mm-cell">
             <div class="mm-label">Signups from Email</div>
@@ -697,7 +680,7 @@ function buildMonthlyView() {
         <div class="section-eyebrow">05 — Monthly Notes</div>
         <div class="notes-box">
           <div class="notes-lbl">What happened in ${m.full}</div>
-          <textarea class="e-notes" data-save="${m.key}|notes" placeholder="What drove growth? What content worked? Qualitative signals from comments and DMs. What to try next month...">${getSaved(m.key,'notes','')}</textarea>
+          <div class="e-notes">''</div>
         </div>
       </div>
     `;
@@ -708,11 +691,6 @@ function buildMonthlyView() {
       renderBars('traffic-'+m.key, trafficD);
       renderBars('acq-'+m.key, acqD);
     }, 0);
-  });
-
-  panelsEl.addEventListener('input', () => {
-    clearTimeout(window._as);
-    window._as = setTimeout(saveAll, 1200);
   });
 }
 
