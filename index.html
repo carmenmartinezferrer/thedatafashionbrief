@@ -418,9 +418,7 @@ const geo = [
 // ── STORAGE ──────────────────────────────────────────────────────
 let saved = {};
 
-function '' {
-  return (saved[key] && saved[key][field] !== undefined) ? saved[key][field] : (DEFAULT_MONTHLY[key] ? DEFAULT_MONTHLY[key][field] : fallback || '');
-}
+// data lookup helper removed — all values now hardcoded from STATIC/DEFAULT_MONTHLY
 
 // ── VIEW SWITCHING ────────────────────────────────────────────────
 function switchView(name) {
@@ -574,8 +572,8 @@ function buildMonthlyView() {
         <div class="month-metrics">
           <div class="mm-cell">
             <div class="mm-label">Total Subscribers</div>
-            <div class="e-val">${s.cumul.toString()}</div>
-            <div class="e-delta up">deltaStr</div>
+            <div class="e-val">${s.cumul.toLocaleString()}</div>
+            <div class="e-delta up">${deltaStr}</div>
           </div>
           <div class="mm-cell">
             <div class="mm-label">New This Month</div>
@@ -584,13 +582,13 @@ function buildMonthlyView() {
           </div>
           <div class="mm-cell">
             <div class="mm-label">Paid Subscribers</div>
-            <div class="e-val pink">'0'</div>
-            <div class="e-delta"> m.key==='2026-05'?'£145.91 revenue':'—'</div>
+            <div class="e-val pink">${m.key === '2026-05' ? '1' : '0'}</div>
+            <div class="e-delta">${m.key === '2026-05' ? '£145.91 revenue' : '—'}</div>
           </div>
           <div class="mm-cell">
             <div class="mm-label">Avg Open Rate</div>
-            <div class="e-val"> s.avgOpen>0?s.avgOpen+'%':'—'</div>
-            <div class="e-delta">${s.posts>0?s.posts+' post'+(s.posts>1?'s':''+' published':'No posts')}</div>
+            <div class="e-val">${s.avgOpen > 0 ? s.avgOpen + '%' : '—'}</div>
+            <div class="e-delta">${s.posts > 0 ? s.posts + ' post' + (s.posts > 1 ? 's' : '') + ' published' : 'No posts'}</div>
           </div>
           <div class="mm-cell">
             <div class="mm-label">Signups from Email</div>
@@ -680,7 +678,7 @@ function buildMonthlyView() {
         <div class="section-eyebrow">05 — Monthly Notes</div>
         <div class="notes-box">
           <div class="notes-lbl">What happened in ${m.full}</div>
-          <div class="e-notes">''</div>
+          <div class="e-notes">${DEFAULT_MONTHLY[m.key] ? DEFAULT_MONTHLY[m.key].notes : ''}</div>
         </div>
       </div>
     `;
